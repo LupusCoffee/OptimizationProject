@@ -1,19 +1,30 @@
 #include "Scripts/Public/Spawner.h"
 
-#include "Rendering/CustomRenderPass.h"
-
 
 ASpawner::ASpawner()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void ASpawner::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentTime = SpawnFrequency;
+}
 
-	if (!ActorToSpawnAsset) return; //shouldn't actually be here, but whatever for now
+void ASpawner::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (CurrentTime < SpawnFrequency)
+	{
+		CurrentTime += DeltaSeconds;
+		return;
+	}
+	
+	if (!ActorToSpawnAsset) return;
 	SpawnActors();
+	CurrentTime = 0.0f;
 }
 
 void ASpawner::SpawnActors()
@@ -22,13 +33,12 @@ void ASpawner::SpawnActors()
 	{
 		for (int y = 0; y < SpawnAreaY; y++)
 		{
-			if (SpawnedActors.Num() >= AmountToSpawn) break;
 			SpawnActor(x * WidthBetweenSpawnLocations, y * WidthBetweenSpawnLocations);
 		}
 	}
 
 	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-		FString::Printf(TEXT("Spawned %d actors!"), SpawnedActors.Num()));
+		FString::Printf(TEXT("Currently Spawned Actors: %d"), SpawnedActors.Num()));
 }
 
 void ASpawner::SpawnActor(float SpawnCordX, float SpawnCordY)

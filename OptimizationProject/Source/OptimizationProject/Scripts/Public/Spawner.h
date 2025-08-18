@@ -11,13 +11,14 @@ class OPTIMIZATIONPROJECT_API ASpawner : public AActor
 
 public:
 	ASpawner();
-
+	
+protected:
 	//Edit
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ActorToSpawnAsset;
 
 	UPROPERTY(EditAnywhere)
-	int AmountToSpawn = 0;
+	float SpawnFrequency = 10;
 
 	UPROPERTY(EditAnywhere)
 	float WidthBetweenSpawnLocations = 100;
@@ -33,9 +34,14 @@ public:
 	//Visible
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> SpawnedActors;
+
+	//Non-Visible
+	UPROPERTY()
+	float CurrentTime = 0;
+
 	
-protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	UFUNCTION()
 	void SpawnActors();

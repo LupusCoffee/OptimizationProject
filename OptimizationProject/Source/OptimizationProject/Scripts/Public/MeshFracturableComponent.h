@@ -4,11 +4,12 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "MeshFracturableComponent.generated.h"
-
-
 class UGeometryCollection;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFracture);
+
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OPTIMIZATIONPROJECT_API UMeshFracturableComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -16,15 +17,17 @@ class OPTIMIZATIONPROJECT_API UMeshFracturableComponent : public UActorComponent
 	
 public:
 	UMeshFracturableComponent();
+
+	
+	UPROPERTY(BlueprintAssignable, Category = "MeshBreakableComponent")
+	FOnFracture OnFracture;
+
 	
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	UGeometryCollectionComponent* Fracture(FVector ImpulseDirection);
 
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	bool SwitchMeshForGeometryCollection();
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "MeshBreakableComponent")
-	void OnFracture();
 
 	
 protected:

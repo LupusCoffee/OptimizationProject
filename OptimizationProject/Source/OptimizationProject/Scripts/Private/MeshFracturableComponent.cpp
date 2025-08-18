@@ -45,6 +45,8 @@ UGeometryCollectionComponent* UMeshFracturableComponent::Fracture(FVector Impuls
 	
 	GeometryComp->AddImpulse(ImpulseDirection * ImpulseTowardsFracturerOnFracture);
 
+	OnFracture.Broadcast();
+	
 	return GeometryComp;
 }
 
