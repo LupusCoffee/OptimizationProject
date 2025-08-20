@@ -36,9 +36,6 @@ void ASpawner::SpawnActors()
 			SpawnActor(x * WidthBetweenSpawnLocations, y * WidthBetweenSpawnLocations);
 		}
 	}
-
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-		FString::Printf(TEXT("Currently Spawned Actors: %d"), SpawnedActors.Num()));
 }
 
 void ASpawner::SpawnActor(float SpawnCordX, float SpawnCordY)

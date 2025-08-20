@@ -1,5 +1,6 @@
 #include "Scripts/Public/MeshFracturableComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
+#include "Scripts/Public/PerformanceCounterSubsystem.h"
 
 
 UMeshFracturableComponent::UMeshFracturableComponent()
@@ -10,16 +11,32 @@ UMeshFracturableComponent::UMeshFracturableComponent()
 void UMeshFracturableComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
 
 	Mesh = GetOwner()->FindComponentByClass<UStaticMeshComponent>();
+	PerformanceCounter->AddCupStaticMeshes(1);
 
 	//Set Events
 	if (!Mesh || !FractureOnFracturerTagHit) return;
 	Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
 }
 
+void UMeshFracturableComponent::OnUnregister()
+{
+	Super::OnUnregister();
+	
+	if (!GeometryComp) return;
+	
+	GeometryComp->OnChaosBreakEvent.RemoveDynamic(this, &UMeshFracturableComponent::OnFractured);
+
+	if (CupState == ECupState::StaticMesh) PerformanceCounter->RemoveCupStaticMeshes(1);
+	else if (CupState == ECupState::GC_Fractured) PerformanceCounter->RemoveFracturedCupGeoColls(1);
+	else PerformanceCounter->RemoveUnfracturedCupGeoColls(1);
+}
+
 void UMeshFracturableComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction)
+                                              FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -60,6 +77,7 @@ bool UMeshFracturableComponent::SwitchMeshForGeometryCollection()
 	FTransform MeshTransform = Mesh->GetComponentTransform();
 	FVector LinearVel = Mesh->GetPhysicsLinearVelocity();
 	Mesh->DestroyComponent();
+	PerformanceCounter->RemoveCupStaticMeshes(1);
 
 	//create geometry collection, inherit static mesh location, rotation, and velocity
 	GeometryComp = NewObject<UGeometryCollectionComponent>(this);
@@ -78,6 +96,12 @@ bool UMeshFracturableComponent::SwitchMeshForGeometryCollection()
 	GeometryComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
 	GeometryComp->AddImpulse(LinearVel * TransferedLinearVelocityMultiplierOnFracture);
+
+	GeometryComp->SetNotifyBreaks(true);
+	GeometryComp->OnChaosBreakEvent.AddDynamic(this, &UMeshFracturableComponent::OnFractured);
+
+	CupState = ECupState::GC_Unfractured;
+	PerformanceCounter->AddUnfracturedCupGeoColls(1);
 	
 	return true;
 }
@@ -92,3 +116,13 @@ void UMeshFracturableComponent::ZeroDamageThreshold()
 	GeometryComp->SetDamageThreshold(DamageThresholds);
 }
 
+void UMeshFracturableComponent::OnFractured(const FChaosBreakEvent& BreakEvent)
+{
+	if (CupState == ECupState::GC_Fractured) return;
+	CupState = ECupState::GC_Fractured;
+	
+	PerformanceCounter->RemoveUnfracturedCupGeoColls(1);
+	PerformanceCounter->AddFracturedCupGeoColls(1);
+	
+	GeometryComp->OnChaosBreakEvent.RemoveDynamic(this, &UMeshFracturableComponent::OnFractured);
+}

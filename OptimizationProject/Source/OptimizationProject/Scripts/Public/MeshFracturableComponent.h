@@ -3,11 +3,22 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "PerformanceCounterSubsystem.h"
+#include "Chaos/ChaosEngineInterface.h"
 #include "MeshFracturableComponent.generated.h"
 class UGeometryCollection;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFracture);
+
+
+UENUM(BlueprintType)
+enum class ECupState : uint8
+{
+	StaticMesh   UMETA(DisplayName="Static Mesh"),
+	GC_Unfractured  UMETA(DisplayName="GC Unbroken"),
+	GC_Fractured    UMETA(DisplayName="GC Broken")
+};
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OPTIMIZATIONPROJECT_API UMeshFracturableComponent : public UActorComponent
@@ -32,10 +43,14 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnUnregister() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	
 	//Non-Editor Properties
+	UPROPERTY()
+	UPerformanceCounterSubsystem* PerformanceCounter = nullptr;
+	
 	UPROPERTY()
 	UStaticMeshComponent* Mesh = nullptr;
 	
@@ -44,6 +59,9 @@ protected:
 
 	UPROPERTY()
 	FVector LastTickVelocity = FVector::ZeroVector;
+
+	UPROPERTY()
+	ECupState CupState = ECupState::StaticMesh;
 
 	
 	//Editor Properties
@@ -66,7 +84,10 @@ protected:
 	UFUNCTION()
 	void OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse, const FHitResult& Hit);
-
+	
 	UFUNCTION()
 	void ZeroDamageThreshold();
+
+	UFUNCTION()
+	void OnFractured(const FChaosBreakEvent& BreakEvent);
 };
