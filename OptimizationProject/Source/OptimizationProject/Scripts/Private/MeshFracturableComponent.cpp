@@ -1,4 +1,6 @@
 #include "Scripts/Public/MeshFracturableComponent.h"
+
+#include "GeometryCollectionProxyData.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Scripts/Public/PerformanceCounterSubsystem.h"
 
@@ -15,11 +17,16 @@ void UMeshFracturableComponent::BeginPlay()
 	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
 
 	Mesh = GetOwner()->FindComponentByClass<UStaticMeshComponent>();
-	PerformanceCounter->AddCupStaticMeshes(1);
+	if (Mesh) PerformanceCounter->AddCupStaticMeshes(1);
 
 	//Set Events
-	if (!Mesh || !FractureOnFracturerTagHit) return;
-	Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
+	if (Mesh || FractureOnFracturerTagHit)
+	{
+		Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
+	}
+
+	//FTransform3f Transform = FTransform3f();
+	//GeometryComp->GetDynamicCollection()->SetTransform(0, GeometryComp->GetComponentTransform());
 }
 
 void UMeshFracturableComponent::OnUnregister()
@@ -27,32 +34,31 @@ void UMeshFracturableComponent::OnUnregister()
 	Super::OnUnregister();
 	
 	if (!GeometryComp) return;
-	
-	GeometryComp->OnChaosBreakEvent.RemoveDynamic(this, &UMeshFracturableComponent::OnFractured);
 
+	GeometryComp->OnChaosBreakEvent.RemoveDynamic(this, &UMeshFracturableComponent::OnFractured);
+        
 	if (CupState == ECupState::StaticMesh) PerformanceCounter->RemoveCupStaticMeshes(1);
-	else if (CupState == ECupState::GC_Fractured) PerformanceCounter->RemoveFracturedCupGeoColls(1);
-	else PerformanceCounter->RemoveUnfracturedCupGeoColls(1);
+	else if (CupState == ECupState::GC_Unfractured) PerformanceCounter->RemoveUnfracturedCupGeoColls(1);
+	else if (CupState == ECupState::GC_Fractured_ActivePhysAndCol) PerformanceCounter->RemovePhysColActiveFracturedCupGeoColls(1);
+	else PerformanceCounter->RemovePhysColDeactiveFracturedCupGeoColls(1);
 }
 
 void UMeshFracturableComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
                                               FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	
+	if (Mesh) LastTickVelocity = Mesh->GetComponentVelocity();
 
-	if (!Mesh) return;
-	LastTickVelocity = Mesh->GetComponentVelocity();
-}
-
-void UMeshFracturableComponent::OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor,
-                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor->ActorHasTag(FracturerTag))
+	if (CupState != ECupState::GC_Fractured_ActivePhysAndCol) return;
+	if (ActivePhysColTimeAfterFracture > TimeToDisablePhysColAfterFracture)
 	{
-		FVector ImpulseDirection = LastTickVelocity.GetSafeNormal();
-		Fracture(ImpulseDirection);
+		DisabledPhysicsAndCollision();
+		CupState = ECupState::GC_Fractured_DeactivePhysAndCol;
 	}
+	else ActivePhysColTimeAfterFracture += DeltaTime;
 }
+
 
 UGeometryCollectionComponent* UMeshFracturableComponent::Fracture(FVector ImpulseDirection)
 {
@@ -63,6 +69,8 @@ UGeometryCollectionComponent* UMeshFracturableComponent::Fracture(FVector Impuls
 	GeometryComp->AddImpulse(ImpulseDirection * ImpulseTowardsFracturerOnFracture);
 
 	OnFracture.Broadcast();
+
+	//GeometryComp->GetDynamicCollection()->GetAttribute<int32>()
 	
 	return GeometryComp;
 }
@@ -116,13 +124,42 @@ void UMeshFracturableComponent::ZeroDamageThreshold()
 	GeometryComp->SetDamageThreshold(DamageThresholds);
 }
 
+void UMeshFracturableComponent::DisabledPhysicsAndCollision()
+{
+	SetGeometryPhysicsAndCollisionStatus(false);
+	PerformanceCounter->RemovePhysColActiveFracturedCupGeoColls(1);
+	PerformanceCounter->AddPhysColDeactiveFracturedCupGeoColls(1);
+}
+
+void UMeshFracturableComponent::SetGeometryPhysicsAndCollisionStatus(bool IsEnabled)
+{
+	if (!GeometryComp) return;
+
+	GeometryComp->SetSimulatePhysics(IsEnabled);
+
+	if (IsEnabled) GeometryComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	else GeometryComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+
+void UMeshFracturableComponent::OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor,
+											   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (!OtherActor->ActorHasTag(FracturerTag)) return;
+	
+	FVector ImpulseDirection = LastTickVelocity.GetSafeNormal();
+	Fracture(ImpulseDirection);
+}
+
 void UMeshFracturableComponent::OnFractured(const FChaosBreakEvent& BreakEvent)
 {
-	if (CupState == ECupState::GC_Fractured) return;
-	CupState = ECupState::GC_Fractured;
+	if (CupState == ECupState::GC_Fractured_ActivePhysAndCol) return;
+	CupState = ECupState::GC_Fractured_ActivePhysAndCol;
+
+	ActivePhysColTimeAfterFracture = 0;
 	
 	PerformanceCounter->RemoveUnfracturedCupGeoColls(1);
-	PerformanceCounter->AddFracturedCupGeoColls(1);
+	PerformanceCounter->AddPhysColActiveFracturedCupGeoColls(1);
 	
 	GeometryComp->OnChaosBreakEvent.RemoveDynamic(this, &UMeshFracturableComponent::OnFractured);
 }

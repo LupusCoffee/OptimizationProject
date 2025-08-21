@@ -23,9 +23,14 @@ public:
 	void RemoveUnfracturedCupGeoColls(int Value);
 
 	UFUNCTION()
-	void AddFracturedCupGeoColls(int Value);
+	void AddPhysColActiveFracturedCupGeoColls(int Value);
 	UFUNCTION()
-	void RemoveFracturedCupGeoColls(int Value);
+	void RemovePhysColActiveFracturedCupGeoColls(int Value);
+
+	UFUNCTION()
+	void AddPhysColDeactiveFracturedCupGeoColls(int Value);
+	UFUNCTION()
+	void RemovePhysColDeactiveFracturedCupGeoColls(int Value);
 	
 private:
 	/*virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -41,5 +46,8 @@ private:
 	int UnfracturedCupGeoColls = 0;
 
 	UPROPERTY()
-	int FracturedCupGeoColls = 0;
+	int PhysColActiveFracturedCupGeoColls = 0;
+
+	UPROPERTY()
+	int PhysColDeactiveFracturedCupGeoColls = 0;
 };

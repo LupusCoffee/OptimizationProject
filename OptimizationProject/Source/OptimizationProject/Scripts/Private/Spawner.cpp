@@ -33,7 +33,10 @@ void ASpawner::SpawnActors()
 	{
 		for (int y = 0; y < SpawnAreaY; y++)
 		{
-			SpawnActor(x * WidthBetweenSpawnLocations, y * WidthBetweenSpawnLocations);
+			SpawnActor(
+				x * WidthBetweenSpawnLocations + FMath::RandRange(SpawnAreaRandMin, SpawnAreaRandMax),
+				y * WidthBetweenSpawnLocations + FMath::RandRange(SpawnAreaRandMin, SpawnAreaRandMax)
+			);
 		}
 	}
 }
@@ -48,6 +51,9 @@ void ASpawner::SpawnActor(float SpawnCordX, float SpawnCordY)
 	FRotator Rotation = FRotator(0, 0, 0);
 
 	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ActorToSpawnAsset, Location, Rotation);
-	if (SpawnedActor) SpawnedActors.Add(SpawnedActor);
+	if (!SpawnedActor) return;
+
+	SpawnedActors.Add(SpawnedActor);
+	OnSpawn.Broadcast(SpawnedActor);
 }
 

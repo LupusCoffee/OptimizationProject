@@ -2,6 +2,7 @@
 
 
 #include "CoreMinimal.h"
+#include "ChaosBlueprint.h"
 #include "Components/ActorComponent.h"
 #include "PerformanceCounterSubsystem.h"
 #include "Chaos/ChaosEngineInterface.h"
@@ -15,10 +16,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFracture);
 UENUM(BlueprintType)
 enum class ECupState : uint8
 {
-	StaticMesh   UMETA(DisplayName="Static Mesh"),
-	GC_Unfractured  UMETA(DisplayName="GC Unbroken"),
-	GC_Fractured    UMETA(DisplayName="GC Broken")
+	StaticMesh,
+	GC_Unfractured,
+	GC_Fractured_ActivePhysAndCol,
+	GC_Fractured_DeactivePhysAndCol
 };
+
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class OPTIMIZATIONPROJECT_API UMeshFracturableComponent : public UActorComponent
@@ -30,15 +33,14 @@ public:
 	UMeshFracturableComponent();
 
 	
-	UPROPERTY(BlueprintAssignable, Category = "MeshBreakableComponent")
-	FOnFracture OnFracture;
-
-	
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	UGeometryCollectionComponent* Fracture(FVector ImpulseDirection);
 
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	bool SwitchMeshForGeometryCollection();
+
+	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
+	void SetGeometryPhysicsAndCollisionStatus(bool IsEnabled);
 
 	
 protected:
@@ -50,19 +52,28 @@ protected:
 	//Non-Editor Properties
 	UPROPERTY()
 	UPerformanceCounterSubsystem* PerformanceCounter = nullptr;
+
+	UPROPERTY()
+	ECupState CupState = ECupState::StaticMesh;
 	
 	UPROPERTY()
 	UStaticMeshComponent* Mesh = nullptr;
+
+	UPROPERTY()
+	FVector LastTickVelocity = FVector::ZeroVector;
 	
 	UPROPERTY()
 	UGeometryCollectionComponent* GeometryComp = nullptr;
 
 	UPROPERTY()
-	FVector LastTickVelocity = FVector::ZeroVector;
-
+	UChaosDestructionListener* ChaosListener = nullptr;
+	
 	UPROPERTY()
-	ECupState CupState = ECupState::StaticMesh;
+	float ActivePhysColTimeAfterFracture = 0;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnFracture OnFracture;
+	
 	
 	//Editor Properties
 	UPROPERTY(EditDefaultsOnly)
@@ -80,14 +91,23 @@ protected:
 	UPROPERTY(EditDefaultsOnly, meta = (ToolTip = "Impulse on the geometry collection directed towards the actor that fractured, when the geo col fractures."))
 	float ImpulseTowardsFracturerOnFracture = 6000;
 
+	UPROPERTY(EditDefaultsOnly)
+	float TimeToDisablePhysColAfterFracture = 10.0f;
+
+
+	//Methods
+	UFUNCTION()
+	void ZeroDamageThreshold();
+
+	UFUNCTION()
+	void DisabledPhysicsAndCollision();
 	
+
+	//Events
 	UFUNCTION()
 	void OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse, const FHitResult& Hit);
 	
-	UFUNCTION()
-	void ZeroDamageThreshold();
-
 	UFUNCTION()
 	void OnFractured(const FChaosBreakEvent& BreakEvent);
 };
