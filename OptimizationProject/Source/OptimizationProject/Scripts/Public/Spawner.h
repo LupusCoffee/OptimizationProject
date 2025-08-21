@@ -37,10 +37,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	int SpawnAreaRandMax = 100;
 	
-
 	UPROPERTY(EditAnywhere)
 	int SpawnHeight = 200;
-
+	
 	//Visible
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> SpawnedActors;

@@ -15,6 +15,7 @@ void UMeshFracturableComponent::BeginPlay()
 	Super::BeginPlay();
 	
 	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
+	MeshFractureHandler = GetWorld()->GetSubsystem<UMeshFractureHandlerSubsystem>();
 
 	Mesh = GetOwner()->FindComponentByClass<UStaticMeshComponent>();
 	if (Mesh) PerformanceCounter->AddCupStaticMeshes(1);
@@ -60,19 +61,17 @@ void UMeshFracturableComponent::TickComponent(float DeltaTime, enum ELevelTick T
 }
 
 
-UGeometryCollectionComponent* UMeshFracturableComponent::Fracture(FVector ImpulseDirection)
+void UMeshFracturableComponent::Fracture(FVector ImpulseDirection)
 {
-	if (!SwitchMeshForGeometryCollection()) return nullptr;
+	if (!SwitchMeshForGeometryCollection()) return; //todo: don't store geometry comp in the variable, just get it from here
 	
 	ZeroDamageThreshold();
 	
 	GeometryComp->AddImpulse(ImpulseDirection * ImpulseTowardsFracturerOnFracture);
 
-	OnFracture.Broadcast();
+	MeshFractureHandler->AddFracturedGeoColl(GeometryComp); //todo: decide what to do with ownership and such --> i do think the handler should keep ownership and simply deligate fractured pieces
 
-	//GeometryComp->GetDynamicCollection()->GetAttribute<int32>()
-	
-	return GeometryComp;
+	OnFracture.Broadcast();
 }
 
 bool UMeshFracturableComponent::SwitchMeshForGeometryCollection()
@@ -124,6 +123,47 @@ void UMeshFracturableComponent::ZeroDamageThreshold()
 	GeometryComp->SetDamageThreshold(DamageThresholds);
 }
 
+void UMeshFracturableComponent::FakeFracture(FVector ImpulseDirection)
+{
+	GeometryComp = SwitchMeshForPreFracturedGeometryCollection();
+	
+	GeometryComp->AddImpulse(ImpulseDirection * ImpulseTowardsFracturerOnFracture);
+
+	ActivePhysColTimeAfterFracture = 0;
+	PerformanceCounter->AddPhysColActiveFracturedCupGeoColls(1);
+	PerformanceCounter->RemovePhysColDeactiveFracturedCupGeoColls(1);
+	CupState = ECupState::GC_Fractured_ActivePhysAndCol;
+
+	OnFracture.Broadcast();
+}
+
+UGeometryCollectionComponent* UMeshFracturableComponent::SwitchMeshForPreFracturedGeometryCollection()
+{
+	if (!Mesh) return nullptr;
+	if (!GeometryAsset) return nullptr;
+
+	//destroy static mesh, save values
+	USceneComponent* Parent = Mesh->GetAttachParent();
+	FTransform MeshTransform = Mesh->GetComponentTransform();
+	FVector LinearVel = Mesh->GetPhysicsLinearVelocity();
+	Mesh->DestroyComponent();
+	PerformanceCounter->RemoveCupStaticMeshes(1);
+
+	//get pre-fractured geometry collection, inherit static mesh location, rotation, and velocity
+	GeometryComp = MeshFractureHandler->GetFracturedGeoColl();
+	if (!GeometryComp) return nullptr;
+
+	GeometryComp->SetWorldLocation(MeshTransform.GetLocation());
+	GeometryComp->SetWorldRotation(MeshTransform.GetRotation());
+	
+	GeometryComp->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
+	SetGeometryPhysicsAndCollisionStatus(true);
+
+	GeometryComp->AddImpulse(LinearVel * TransferedLinearVelocityMultiplierOnFracture);
+	
+	return GeometryComp;
+}
+
 void UMeshFracturableComponent::DisabledPhysicsAndCollision()
 {
 	SetGeometryPhysicsAndCollisionStatus(false);
@@ -143,12 +183,14 @@ void UMeshFracturableComponent::SetGeometryPhysicsAndCollisionStatus(bool IsEnab
 
 
 void UMeshFracturableComponent::OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor,
-											   UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!OtherActor->ActorHasTag(FracturerTag)) return;
 	
 	FVector ImpulseDirection = LastTickVelocity.GetSafeNormal();
-	Fracture(ImpulseDirection);
+
+	if (MeshFractureHandler->CanReuseFracturedGeoColls()) FakeFracture(ImpulseDirection);
+	else Fracture(ImpulseDirection);
 }
 
 void UMeshFracturableComponent::OnFractured(const FChaosBreakEvent& BreakEvent)

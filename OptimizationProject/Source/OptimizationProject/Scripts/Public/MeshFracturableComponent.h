@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "ChaosBlueprint.h"
+#include "MeshFractureHandlerSubsystem.h"
 #include "Components/ActorComponent.h"
 #include "PerformanceCounterSubsystem.h"
 #include "Chaos/ChaosEngineInterface.h"
@@ -34,13 +35,19 @@ public:
 
 	
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
-	UGeometryCollectionComponent* Fracture(FVector ImpulseDirection);
+	void Fracture(FVector ImpulseDirection);
 
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	bool SwitchMeshForGeometryCollection();
 
 	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
 	void SetGeometryPhysicsAndCollisionStatus(bool IsEnabled);
+
+	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
+	void FakeFracture(FVector ImpulseDirection);
+
+	UFUNCTION(BlueprintCallable, Category = "MeshBreakableComponent")
+	UGeometryCollectionComponent* SwitchMeshForPreFracturedGeometryCollection();
 
 	
 protected:
@@ -52,6 +59,9 @@ protected:
 	//Non-Editor Properties
 	UPROPERTY()
 	UPerformanceCounterSubsystem* PerformanceCounter = nullptr;
+
+	UPROPERTY()
+	UMeshFractureHandlerSubsystem* MeshFractureHandler = nullptr;
 
 	UPROPERTY()
 	ECupState CupState = ECupState::StaticMesh;
