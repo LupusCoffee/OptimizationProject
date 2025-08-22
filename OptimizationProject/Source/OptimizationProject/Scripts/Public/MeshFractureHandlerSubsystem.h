@@ -2,6 +2,7 @@
 
 
 #include "CoreMinimal.h"
+#include "MeshFractureHandlerData.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "MeshFractureHandlerSubsystem.generated.h"
 class UPerformanceCounterSubsystem;
@@ -14,6 +15,9 @@ class OPTIMIZATIONPROJECT_API UMeshFractureHandlerSubsystem : public UWorldSubsy
 
 public:
 	//Methods
+	UFUNCTION()
+	void InitData();
+	
 	UFUNCTION()
 	void AddFracturedGeoColl(UGeometryCollectionComponent* GeoColl);
 	
@@ -29,23 +33,32 @@ protected:
 
 	//Variables
 	UPROPERTY()
+	UPerformanceCounterSubsystem* PerformanceCounterSubsystem;
+
+	UPROPERTY()
 	UPerformanceCounterSubsystem* PerformanceCounter = nullptr;
-	
+
 	UPROPERTY()
 	TArray<UGeometryCollectionComponent*> FracturedGeometryCollections;
+	
+	UPROPERTY()
+	int LastUsedGeoCollIndex = 0;
+
+	
+	//Variables Set By Data Asset
+	UPROPERTY()
+	bool UsePooling = true;
 	
 	UPROPERTY()
 	int PoolSizeForReuse = 250;
 
 	UPROPERTY()
-	int PreFracturedGeometryCollections = 1000;
+	int AmountOfPreFracturedGeometryCollections = 250;
 
 	UPROPERTY()
 	UGeometryCollection* GeometryAsset = nullptr;
 
-	UPROPERTY()
-	int LastUsedGeoCollIndex = 0;
-	
+
 	//pre broken geo coll amount -> for each chosen mesh fracturable actor
 	//max pool size -> for each chosen mesh fracturable actor
 

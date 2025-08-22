@@ -1,6 +1,6 @@
 #include "Scripts/Public/MeshFractureHandlerSubsystem.h"
-#include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Scripts/Public/PerformanceCounterSubsystem.h"
+#include "Scripts/Public/PerfProjGameInstance.h"
 
 void UMeshFractureHandlerSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
@@ -8,14 +8,27 @@ void UMeshFractureHandlerSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 
 	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
 
-	//set initial stuff based on mesh fracture handler data
+	InitData();
 
+	//TODO: spawn pre-fractured geometry collections 
 	/*for (int i = 0; i < PreFracturedGeometryCollections; ++i)
 		SpawnGeometryCollection(0,0, -1900);*/
 }
 
+void UMeshFractureHandlerSubsystem::InitData()
+{
+	UMeshFractureHandlerData* Data = GetWorld()->GetGameInstance<UPerfProjGameInstance>()->GetMeshFractureHandlerData();
+
+	UsePooling = Data->UsesPooling();
+	PoolSizeForReuse = Data->GetPoolSizeForResue();
+	AmountOfPreFracturedGeometryCollections = Data->GetAmountOfPreFracturedGeometryCollections();
+	GeometryAsset = Data->GetGeometryCollectionAsset();
+}
+
 void UMeshFractureHandlerSubsystem::SpawnGeometryCollection(float SpawnCordX, float SpawnCordY, float SpawnCordZ)
 {
+	//TODO: spawn pre-fractured geometry collections
+
 	/*UGeometryCollectionComponent* GeometryComp = NewObject<UGeometryCollectionComponent>(this);
 	if (!GeometryComp) return;
 	
@@ -52,7 +65,9 @@ UGeometryCollectionComponent* UMeshFractureHandlerSubsystem::GetFracturedGeoColl
 
 bool UMeshFractureHandlerSubsystem::CanReuseFracturedGeoColls()
 {
-	if (FracturedGeometryCollections.Num() > PoolSizeForReuse) return true;
+	if (!UsePooling) return false;
+	if (PoolSizeForReuse <= 0) return false;
+	if (FracturedGeometryCollections.Num() <= PoolSizeForReuse) return false;
 	
-	return false;
+	return true;
 }
