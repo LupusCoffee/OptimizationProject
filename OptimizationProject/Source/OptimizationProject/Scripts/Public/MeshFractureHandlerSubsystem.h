@@ -35,7 +35,7 @@ protected:
 	TArray<UGeometryCollectionComponent*> FracturedGeometryCollections;
 	
 	UPROPERTY()
-	int PoolSizeForReuse = 500;
+	int PoolSizeForReuse = 250;
 
 	UPROPERTY()
 	int PreFracturedGeometryCollections = 1000;
