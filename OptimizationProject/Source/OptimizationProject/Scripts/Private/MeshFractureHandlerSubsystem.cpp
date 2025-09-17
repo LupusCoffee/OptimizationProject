@@ -1,4 +1,7 @@
 #include "Scripts/Public/MeshFractureHandlerSubsystem.h"
+
+#include "GeometryCollection/GeometryCollectionComponent.h"
+#include "Scripts/Public/MeshFracturableComponent.h"
 #include "Scripts/Public/PerformanceCounterSubsystem.h"
 #include "Scripts/Public/PerfProjGameInstance.h"
 
@@ -9,10 +12,9 @@ void UMeshFractureHandlerSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
 
 	InitData();
-
-	//TODO: spawn pre-fractured geometry collections 
-	/*for (int i = 0; i < PreFracturedGeometryCollections; ++i)
-		SpawnGeometryCollection(0,0, -1900);*/
+	
+	for (int i = 0; i < AmountOfPreFracturedGeometryCollections; i++)
+		SpawnPreFracturedGeometryCollection(0,0, -1900);
 }
 
 void UMeshFractureHandlerSubsystem::InitData()
@@ -25,26 +27,37 @@ void UMeshFractureHandlerSubsystem::InitData()
 	GeometryAsset = Data->GetGeometryCollectionAsset();
 }
 
-void UMeshFractureHandlerSubsystem::SpawnGeometryCollection(float SpawnCordX, float SpawnCordY, float SpawnCordZ)
+void UMeshFractureHandlerSubsystem::SpawnPreFracturedGeometryCollection(float SpawnCordX, float SpawnCordY, float SpawnCordZ)
 {
-	//TODO: spawn pre-fractured geometry collections
+	//TODO: spawn pre-fractured geometry collections --> of type?
 
-	/*UGeometryCollectionComponent* GeometryComp = NewObject<UGeometryCollectionComponent>(this);
+	UGeometryCollectionComponent* GeometryComp = NewObject<UGeometryCollectionComponent>(this);
 	if (!GeometryComp) return;
 	
+	/*
 	GeometryComp->SetRestCollection(GeometryAsset);
 
 	GeometryComp->SetWorldLocation(FVector(SpawnCordX, SpawnCordY, SpawnCordZ));
+	GeometryComp->SetWorldRotation(FRotator(0,0,0));
+	
+	GeometryComp->AttachToComponent(Parent, FAttachmentTransformRules::KeepRelativeTransform);
 	
 	GeometryComp->RegisterComponent();
 	GeometryComp->SetSimulatePhysics(true);
 	GeometryComp->SetNotifyRigidBodyCollision(true);
 	GeometryComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
+	GeometryComp->AddImpulse(LinearVel * TransferedLinearVelocityMultiplierOnFracture);
+
 	GeometryComp->SetNotifyBreaks(true);
-	GeometryComp->OnChaosBreakEvent.AddDynamic(this, &UMeshFracturableComponent::OnFractured); //as soon as they have fractured, we turn off collision and physics
+	GeometryComp->OnChaosBreakEvent.AddDynamic(this, &UMeshFracturableComponent::OnFractured);
+
+	CupState = ECupState::GC_Unfractured;
+	PerformanceCounter->AddUnfracturedCupGeoColls(1);
+	//GeometryComp->OnChaosBreakEvent.AddDynamic(this, &UMeshFracturableComponent::OnFractured); //as soon as they have fractured, we turn off collision and physics
+	*/
 	
-	PerformanceCounter->AddPhysColActiveFracturedCupGeoColls()*/
+	PerformanceCounter->AddPhysColActiveFracturedCupGeoColls(1);
 }
 
 void UMeshFractureHandlerSubsystem::AddFracturedGeoColl(UGeometryCollectionComponent* GeoColl)

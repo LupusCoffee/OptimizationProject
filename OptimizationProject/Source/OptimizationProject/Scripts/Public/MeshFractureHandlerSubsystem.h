@@ -8,16 +8,15 @@
 class UPerformanceCounterSubsystem;
 class UGeometryCollection;
 
+
 UCLASS()
 class OPTIMIZATIONPROJECT_API UMeshFractureHandlerSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 
-public:
-	//Methods
-	UFUNCTION()
-	void InitData();
 	
+public:
+	//Internal Methods
 	UFUNCTION()
 	void AddFracturedGeoColl(UGeometryCollectionComponent* GeoColl);
 	
@@ -29,23 +28,23 @@ public:
 
 	
 protected:
+	//Core Overrides
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
-	//Variables
-	UPROPERTY()
-	UPerformanceCounterSubsystem* PerformanceCounterSubsystem;
 
+	//Internal Variables
 	UPROPERTY()
 	UPerformanceCounterSubsystem* PerformanceCounter = nullptr;
 
+	//todo: the following seven variables need to be part of a struct --> make a map with each type of geometry collection
 	UPROPERTY()
-	TArray<UGeometryCollectionComponent*> FracturedGeometryCollections;
+	TArray<UGeometryCollectionComponent*> FracturedGeometryCollections; //todo: make into map, one for each type
 	
 	UPROPERTY()
-	int LastUsedGeoCollIndex = 0;
+	int LastUsedGeoCollIndex = 0;										//todo: make into map, one for each type
 
 	
-	//Variables Set By Data Asset
+	//Data-Asset-Set Variables											//todo: make into map, one for each type
 	UPROPERTY()
 	bool UsePooling = true;
 	
@@ -59,13 +58,10 @@ protected:
 	UGeometryCollection* GeometryAsset = nullptr;
 
 
-	//pre broken geo coll amount -> for each chosen mesh fracturable actor
-	//max pool size -> for each chosen mesh fracturable actor
-
-	//in data, simply set for whichever mesh fracturable actor ya want
-
-
-	//Methods
+	//Internal Methods
 	UFUNCTION()
-	void SpawnGeometryCollection(float SpawnCordX, float SpawnCordY, float SpawnCordZ);
+	void InitData();
+	
+	UFUNCTION()
+	void SpawnPreFracturedGeometryCollection(float SpawnCordX, float SpawnCordY, float SpawnCordZ);
 };

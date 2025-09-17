@@ -14,9 +14,21 @@ class OPTIMIZATIONPROJECT_API ASpawner : public AActor
 	GENERATED_BODY()
 
 public:
+	//Constructor
 	ASpawner();
+
+	
+	//Delegates
+	UPROPERTY(BlueprintAssignable)
+	FOnSpawn OnSpawn;
+
 	
 protected:
+	//Core Overrides
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
+	
 	//Edit
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ActorToSpawnAsset;
@@ -29,32 +41,31 @@ protected:
 	
 	UPROPERTY(EditAnywhere, meta = (ToolTip = "2D Dimensions of Spawn Area"))
 	int SpawnAreaX = 0;
+	
 	UPROPERTY(EditAnywhere, meta = (ToolTip = "2D Dimensions of Spawn Area"))
 	int SpawnAreaY = 0;
-
-	UPROPERTY(EditAnywhere)
-	int SpawnAreaRandMin = -100;
-	UPROPERTY(EditAnywhere)
-	int SpawnAreaRandMax = 100;
 	
 	UPROPERTY(EditAnywhere)
 	int SpawnHeight = 200;
+
+	UPROPERTY(EditAnywhere)
+	int SpawnAreaRandMin = -100;
+	
+	UPROPERTY(EditAnywhere)
+	int SpawnAreaRandMax = 100;
+
 	
 	//Visible
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> SpawnedActors;
 
-	//Non-Visible
+	
+	//Internal
 	UPROPERTY()
 	float CurrentTime = 0;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnSpawn OnSpawn;
-
 	
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
 
+	//Internal Methods
 	UFUNCTION()
 	void SpawnActors();
 

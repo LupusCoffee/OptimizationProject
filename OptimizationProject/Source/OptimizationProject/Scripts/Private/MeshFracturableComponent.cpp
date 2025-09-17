@@ -21,10 +21,7 @@ void UMeshFracturableComponent::BeginPlay()
 	if (Mesh) PerformanceCounter->AddCupStaticMeshes(1);
 
 	//Set Events
-	if (Mesh || FractureOnFracturerTagHit)
-	{
-		Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
-	}
+	if (Mesh || FractureOnFracturerTagHit) Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
 
 	//FTransform3f Transform = FTransform3f();
 	//GeometryComp->GetDynamicCollection()->SetTransform(0, GeometryComp->GetComponentTransform());

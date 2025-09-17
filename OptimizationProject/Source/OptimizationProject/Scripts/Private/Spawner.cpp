@@ -9,6 +9,7 @@ ASpawner::ASpawner()
 void ASpawner::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	CurrentTime = SpawnFrequency;
 }
 

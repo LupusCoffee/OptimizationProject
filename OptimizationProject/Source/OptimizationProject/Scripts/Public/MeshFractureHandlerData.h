@@ -3,16 +3,17 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "MeshFractureHandlerData.generated.h"
-
-
 class UGeometryCollection;
+
 
 UCLASS(BlueprintType)
 class OPTIMIZATIONPROJECT_API UMeshFractureHandlerData : public UDataAsset
 {
 	GENERATED_BODY()
 
+	
 public:
+	//Internal Methods
 	UFUNCTION()
 	bool UsesPooling();
 	
@@ -24,8 +25,10 @@ public:
 	
 	UFUNCTION()
 	UGeometryCollection* GetGeometryCollectionAsset();
+
 	
 protected:
+	//Editable Variables
 	UPROPERTY(EditDefaultsOnly)
 	bool UsePooling = true;
 	
