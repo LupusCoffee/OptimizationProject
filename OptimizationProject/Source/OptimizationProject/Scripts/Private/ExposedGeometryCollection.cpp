@@ -10,6 +10,11 @@ AExposedGeometryCollection::AExposedGeometryCollection()
 	GeometryComp = CreateDefaultSubobject<UGeometryCollectionComponent>("GeometryCollectionComp");
 }
 
+void AExposedGeometryCollection::Init(UGeometryCollection* Asset)
+{
+	GeometryComp->SetRestCollection(Asset);
+}
+
 
 //Core Overrides
 void AExposedGeometryCollection::BeginPlay()
@@ -26,10 +31,7 @@ void AExposedGeometryCollection::Tick(float DeltaTime)
 
 
 //External Methods
-void AExposedGeometryCollection::SetAsset(UGeometryCollection* Asset)
-{
-	GeometryComp->SetRestCollection(Asset);
-}
+
 
 
 //Delegates

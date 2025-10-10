@@ -115,7 +115,7 @@ protected:
 
 	//Events
 	UFUNCTION()
-	void OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse, const FHitResult& Hit);
 	
 	UFUNCTION()

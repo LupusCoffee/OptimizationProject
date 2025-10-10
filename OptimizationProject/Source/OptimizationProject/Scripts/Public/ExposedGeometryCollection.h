@@ -19,8 +19,8 @@ public:
 
 	
 	//External Methods
-	UFUNCTION(BlueprintCallable)
-	void SetAsset(UGeometryCollection* Asset);
+	UFUNCTION()
+	void Init(UGeometryCollection* Asset);
 
 protected:
 	//Core Overrides

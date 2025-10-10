@@ -1,6 +1,4 @@
 #include "Scripts/Public/MeshFracturableComponent.h"
-
-#include "GeometryCollectionProxyData.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 #include "Scripts/Public/PerformanceCounterSubsystem.h"
 
@@ -13,18 +11,18 @@ UMeshFracturableComponent::UMeshFracturableComponent()
 void UMeshFracturableComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	//Subsystems
 	PerformanceCounter = GetWorld()->GetSubsystem<UPerformanceCounterSubsystem>();
 	MeshFractureHandler = GetWorld()->GetSubsystem<UMeshFractureHandlerSubsystem>();
 
+	//Mesh
 	Mesh = GetOwner()->FindComponentByClass<UStaticMeshComponent>();
 	if (Mesh) PerformanceCounter->AddCupStaticMeshes(1);
 
-	//Set Events
-	if (Mesh || FractureOnFracturerTagHit) Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnHitFracturer);
-
-	//FTransform3f Transform = FTransform3f();
-	//GeometryComp->GetDynamicCollection()->SetTransform(0, GeometryComp->GetComponentTransform());
+	//Delegates --> AddDynamic
+	if (Mesh || FractureOnFracturerTagHit)
+		Mesh->OnComponentHit.AddDynamic(this, &UMeshFracturableComponent::OnComponentHit);
 }
 
 void UMeshFracturableComponent::OnUnregister()
@@ -179,8 +177,8 @@ void UMeshFracturableComponent::SetGeometryPhysicsAndCollisionStatus(bool IsEnab
 }
 
 
-void UMeshFracturableComponent::OnHitFracturer(UPrimitiveComponent* HitComp, AActor* OtherActor,
-                                               UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+//Delegates
+void UMeshFracturableComponent::OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (!OtherActor->ActorHasTag(FracturerTag)) return;
 	
